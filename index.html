@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIML Stock Terminal</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0f1923;color:#e0e0e0;font-family:'Segoe UI',sans-serif;min-height:100vh;}
+
+  /* HEADER */
+  .header{background:linear-gradient(135deg,#0d2137,#1a3a5c);padding:18px 32px;
+    display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e3a55;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{font-size:28px;}
+  .logo h1{font-size:1.6rem;font-weight:700;color:#00e5ff;letter-spacing:2px;}
+  .logo p{font-size:0.75rem;color:#607d8b;letter-spacing:1px;}
+  .header-badges{display:flex;gap:8px;}
+  .badge{background:#1e3a55;border:1px solid #00e5ff33;color:#00e5ff;
+    padding:4px 12px;border-radius:20px;font-size:0.7rem;letter-spacing:1px;}
+
+  /* TABS */
+  .tabs{display:flex;background:#0d1b2a;border-bottom:1px solid #1e3a55;padding:0 32px;}
+  .tab{padding:14px 28px;cursor:pointer;color:#607d8b;font-size:0.85rem;
+    letter-spacing:1px;border-bottom:2px solid transparent;transition:all .2s;}
+  .tab.active,.tab:hover{color:#00e5ff;border-bottom-color:#00e5ff;}
+
+  /* MAIN */
+  .main{max-width:1100px;margin:0 auto;padding:32px 16px;}
+
+  /* PANEL */
+  .panel{background:#111f2e;border:1px solid #1e3a55;border-radius:12px;padding:28px;margin-bottom:24px;}
+  .panel-title{color:#00e5ff;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:20px;border-bottom:1px solid #1e3a55;padding-bottom:10px;}
+
+  /* SECTOR FILTER */
+  .sector-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .sector-btn{background:#1a2d40;border:1px solid #1e3a55;color:#90a4ae;
+    padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.75rem;
+    letter-spacing:0.5px;transition:all .2s;}
+  .sector-btn:hover,.sector-btn.active{background:#00e5ff22;border-color:#00e5ff;color:#00e5ff;}
+
+  /* SEARCH */
+  .search-wrap{position:relative;margin-bottom:16px;}
+  .search-input{width:100%;background:#0d1b2a;border:1px solid #1e3a55;
+    color:#e0e0e0;padding:14px 18px;border-radius:8px;font-size:1rem;
+    transition:border .2s;outline:none;}
+  .search-input:focus{border-color:#00e5ff;}
+  .suggestions{position:absolute;top:100%;left:0;right:0;background:#1a2d40;
+    border:1px solid #1e3a55;border-top:none;border-radius:0 0 8px 8px;
+    z-index:100;max-height:280px;overflow-y:auto;}
+  .sug-item{padding:10px 16px;cursor:pointer;border-bottom:1px solid #0d1b2a;
+    display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;}
+  .sug-item:hover{background:#00e5ff15;}
+  .sug-ticker{color:#00e5ff;font-weight:700;font-size:0.9rem;}
+  .sug-name{color:#90a4ae;font-size:0.78rem;text-align:right;max-width:60%;}
+
+  /* SECTOR STOCKS QUICK LIST */
+  .sector-stocks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+  .sector-stock-chip{background:#1a2d40;border:1px solid #1e3a55;
+    color:#90a4ae;padding:5px 12px;border-radius:6px;cursor:pointer;
+    font-size:0.75rem;transition:all .2s;}
+  .sector-stock-chip:hover{background:#00e5ff22;border-color:#00e5ff;color:#00e5ff;}
+
+  /* BUTTONS */
+  .btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:1rem;
+    font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:4px;}
+  .btn-primary{background:linear-gradient(135deg,#00acc1,#00e5ff);color:#0f1923;}
+  .btn-primary:hover{opacity:.85;transform:translateY(-1px);}
+  .btn-compare{background:linear-gradient(135deg,#6a1b9a,#ab47bc);color:white;}
+  .btn-compare:hover{opacity:.85;}
+
+  /* RESULT */
+  .result-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .company-info h2{font-size:1.3rem;color:white;}
+  .company-info p{color:#607d8b;font-size:0.8rem;letter-spacing:1px;}
+  .verdict-box{padding:12px 28px;border-radius:8px;text-align:center;}
+  .verdict-box.BUY{background:#00e67622;border:2px solid #00e676;}
+  .verdict-box.SELL{background:#ff525222;border:2px solid #ff5252;}
+  .verdict-box.HOLD{background:#ffd74022;border:2px solid #ffd740;}
+  .verdict-text{font-size:1.6rem;font-weight:900;letter-spacing:3px;}
+  .BUY .verdict-text{color:#00e676;}
+  .SELL .verdict-text{color:#ff5252;}
+  .HOLD .verdict-text{color:#ffd740;}
+  .conf-text{color:#90a4ae;font-size:0.75rem;}
+
+  /* METRICS GRID */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0;}
+  .metric{background:#0d1b2a;border:1px solid #1e3a55;border-radius:8px;padding:14px;text-align:center;}
+  .metric-label{color:#607d8b;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;}
+  .metric-value{color:#00e5ff;font-size:1.15rem;font-weight:700;margin-top:4px;}
+  .metric-value.green{color:#00e676;}
+  .metric-value.red{color:#ff5252;}
+  .metric-value.yellow{color:#ffd740;}
+
+  /* FORECAST TABLE */
+  .forecast-table{width:100%;border-collapse:collapse;margin-top:12px;}
+  .forecast-table th{color:#607d8b;font-size:0.7rem;letter-spacing:1px;
+    text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #1e3a55;}
+  .forecast-table td{padding:8px 12px;border-bottom:1px solid #0d1b2a;font-size:0.85rem;}
+  .forecast-table tr:hover td{background:#1a2d40;}
+
+  /* CHART */
+  .chart-img{width:100%;border-radius:10px;border:1px solid #1e3a55;margin-top:12px;}
+
+  /* COMPARE */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .compare-card{background:#0d1b2a;border:1px solid #1e3a55;border-radius:8px;padding:16px;}
+  .compare-card h3{color:#00e5ff;margin-bottom:12px;font-size:0.9rem;}
+
+  /* ERROR */
+  .error-box{background:#ff525215;border:1px solid #ff5252;border-radius:8px;
+    padding:14px 18px;color:#ff5252;text-align:center;margin-top:16px;}
+
+  /* SPINNER */
+  .spinner{display:none;text-align:center;padding:40px;color:#607d8b;}
+  .spinner.active{display:block;}
+  .spin{display:inline-block;width:32px;height:32px;border:3px solid #1e3a55;
+    border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* HIDDEN */
+  .hidden{display:none;}
+
+  /* COMPARE TAB INPUTS */
+  .compare-inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div>
+      <h1>AIML STOCK TERMINAL</h1>
+      <p>NSE · 2364+ Companies · AI Powered · Random Forest ML</p>
+    </div>
+  </div>
+  <div class="header-badges">
+    <div class="badge">🤖 ML POWERED</div>
+    <div class="badge" id="mktStatus">⏳ LOADING</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('analyse')">🔍 Analyse Stock</div>
+  <div class="tab" onclick="switchTab('compare')">⚖️ Compare 2 Stocks</div>
+</div>
+
+<div class="main">
+
+  <!-- ── ANALYSE TAB ── -->
+  <div id="tab-analyse">
+    <div class="panel">
+      <div class="panel-title">🏭 Filter by Sector</div>
+      <div class="sector-grid" id="sectorGrid"></div>
+      <div class="sector-stocks" id="sectorStocks"></div>
+
+      <div class="panel-title" style="margin-top:4px;">🔍 Search Company</div>
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" placeholder="Type company name or ticker (e.g. RELIANCE, Infosys...)" autocomplete="off"/>
+        <div class="suggestions hidden" id="suggestions"></div>
+      </div>
+      <button class="btn btn-primary" onclick="runAnalysis()">▶ Run AI Analysis</button>
+    </div>
+
+    <div class="spinner" id="spinner"><div class="spin"></div><p style="margin-top:12px;">Fetching data & training model...</p></div>
+    <div class="hidden" id="errorBox"><div class="error-box" id="errorMsg"></div></div>
+    <div class="hidden" id="resultBox"></div>
+  </div>
+
+  <!-- ── COMPARE TAB ── -->
+  <div id="tab-compare" class="hidden">
+    <div class="panel">
+      <div class="panel-title">⚖️ Compare Two Stocks Side by Side</div>
+      <div class="compare-inputs">
+        <div>
+          <div style="color:#607d8b;font-size:.75rem;margin-bottom:6px;">STOCK 1</div>
+          <input class="search-input" id="c1" placeholder="e.g. RELIANCE"/>
+        </div>
+        <div>
+          <div style="color:#607d8b;font-size:.75rem;margin-bottom:6px;">STOCK 2</div>
+          <input class="search-input" id="c2" placeholder="e.g. TCS"/>
+        </div>
+      </div>
+      <button class="btn btn-compare" onclick="runCompare()">⚖️ Compare Stocks</button>
+    </div>
+    <div class="spinner" id="cspinner"><div class="spin"></div><p style="margin-top:12px;">Analysing both stocks...</p></div>
+    <div class="hidden" id="cerrorBox"><div class="error-box" id="cerrorMsg"></div></div>
+    <div class="hidden" id="compareResult"></div>
+  </div>
+
+</div>
+
+<script>
+let selectedTicker = "";
+
+// ── TAB SWITCH ──
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0&&tab==='analyse')||(i===1&&tab==='compare'));
+  });
+  document.getElementById('tab-analyse').classList.toggle('hidden', tab!=='analyse');
+  document.getElementById('tab-compare').classList.toggle('hidden', tab!=='compare');
+}
+
+// ── MARKET STATUS ──
+function checkMarket(){
+  const now=new Date();
+  const ist=new Date(now.toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  const h=ist.getHours(), m=ist.getMinutes(), d=ist.getDay();
+  const open=d>=1&&d<=5&&(h>9||(h===9&&m>=15))&&(h<15||(h===15&&m<=30));
+  document.getElementById('mktStatus').textContent=open?"🟢 MARKET OPEN":"🔴 MARKET CLOSED";
+}
+checkMarket();
+
+// ── SECTORS ──
+fetch('/sectors').then(r=>r.json()).then(sectors=>{
+  const grid=document.getElementById('sectorGrid');
+  sectors.forEach(s=>{
+    const btn=document.createElement('div');
+    btn.className='sector-btn';
+    btn.textContent=s;
+    btn.onclick=()=>loadSector(s, btn);
+    grid.appendChild(btn);
+  });
+});
+
+function loadSector(name, btn){
+  document.querySelectorAll('.sector-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  fetch(`/sector_stocks?sector=${encodeURIComponent(name)}`).then(r=>r.json()).then(stocks=>{
+    const el=document.getElementById('sectorStocks');
+    el.innerHTML='';
+    stocks.forEach(s=>{
+      const chip=document.createElement('div');
+      chip.className='sector-stock-chip';
+      chip.textContent=`${s.ticker} — ${s.name}`;
+      chip.onclick=()=>{
+        selectedTicker=s.ticker;
+        document.getElementById('searchInput').value=`${s.ticker} — ${s.name}`;
+        document.getElementById('suggestions').classList.add('hidden');
+      };
+      el.appendChild(chip);
+    });
+  });
+}
+
+// ── SEARCH ──
+const inp=document.getElementById('searchInput');
+const sug=document.getElementById('suggestions');
+let debounce;
+inp.addEventListener('input',()=>{
+  clearTimeout(debounce);
+  selectedTicker='';
+  const q=inp.value.trim();
+  if(!q){sug.classList.add('hidden');return;}
+  debounce=setTimeout(()=>{
+    fetch(`/search?q=${encodeURIComponent(q)}`).then(r=>r.json()).then(results=>{
+      if(!results.length){sug.classList.add('hidden');return;}
+      sug.innerHTML='';
+      results.forEach(r=>{
+        const d=document.createElement('div');
+        d.className='sug-item';
+        d.innerHTML=`<span class="sug-ticker">${r.ticker}</span><span class="sug-name">${r.name}</span>`;
+        d.onclick=()=>{
+          selectedTicker=r.ticker;
+          inp.value=`${r.ticker} — ${r.name}`;
+          sug.classList.add('hidden');
+        };
+        sug.appendChild(d);
+      });
+      sug.classList.remove('hidden');
+    });
+  },250);
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))sug.classList.add('hidden');});
+
+// ── ANALYSE ──
+async function runAnalysis(){
+  const ticker=selectedTicker||inp.value.split('—')[0].trim().toUpperCase();
+  if(!ticker){alert('Please select a stock!');return;}
+  show('spinner'); hide('resultBox'); hide('errorBox');
+  try{
+    const res=await fetch('/analyse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker})});
+    const data=await res.json();
+    hide('spinner');
+    if(data.error){showError(data.error,'errorMsg','errorBox');return;}
+    renderResult(data);
+  }catch(e){hide('spinner');showError('Network error. Is Flask running?','errorMsg','errorBox');}
+}
+
+function renderResult(d){
+  const riskColor=d.risk_level==='LOW'?'green':d.risk_level==='MEDIUM'?'yellow':'red';
+  const fp=d.forecast.map(f=>`<tr><td>${f.date}</td><td style="color:#00e5ff;font-weight:700;">₹${f.price.toLocaleString()}</td><td style="color:${f.price>=d.current_price?'#00e676':'#ff5252'}">${f.price>=d.current_price?'▲':'▼'}</td></tr>`).join('');
+  document.getElementById('resultBox').innerHTML=`
+  <div class="panel">
+    <div class="result-header">
+      <div class="company-info">
+        <h2>${d.company}</h2>
+        <p>${d.ticker} · ${d.exchange} · ${d.market_status}</p>
+      </div>
+      <div class="verdict-box ${d.verdict}">
+        <div class="verdict-text">${d.verdict}</div>
+        <div class="conf-text">AI Confidence: ${d.confidence}%</div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Current Price</div><div class="metric-value">₹${d.current_price.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">Buy Zone</div><div class="metric-value green">₹${d.target_buy.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">Sell Target</div><div class="metric-value green">₹${d.target_sell.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">Stop Loss</div><div class="metric-value red">₹${d.stop_loss.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">RSI (${d.rsi})</div><div class="metric-value ${d.rsi>70?'red':d.rsi<30?'green':'yellow'}">${d.rsi_status}</div></div>
+      <div class="metric"><div class="metric-label">MACD</div><div class="metric-value ${d.macd_status==='Bullish'?'green':'red'}">${d.macd_status}</div></div>
+      <div class="metric"><div class="metric-label">Risk Level</div><div class="metric-value ${riskColor}">${d.risk_level}</div></div>
+      <div class="metric"><div class="metric-label">Volatility</div><div class="metric-value">${d.volatility}%</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">📅 7-Day AI Price Forecast</div>
+    <table class="forecast-table">
+      <thead><tr><th>Date</th><th>Forecast Price</th><th>Direction</th></tr></thead>
+      <tbody>${fp}</tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <div class="panel-title">📊 AI Analysis Charts (Candlestick · Price · Volume · RSI · MACD · Forecast)</div>
+    <img class="chart-img" src="${d.chart_url}?t=${Date.now()}" alt="Analysis Charts"/>
+  </div>`;
+  show('resultBox');
+}
+
+// ── COMPARE ──
+async function runCompare(){
+  const t1=document.getElementById('c1').value.trim().toUpperCase();
+  const t2=document.getElementById('c2').value.trim().toUpperCase();
+  if(!t1||!t2){alert('Enter both stock tickers!');return;}
+  show('cspinner'); hide('compareResult'); hide('cerrorBox');
+  try{
+    const res=await fetch('/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticker1:t1,ticker2:t2})});
+    const data=await res.json();
+    hide('cspinner');
+    if(data.error){showError(data.error,'cerrorMsg','cerrorBox');return;}
+    renderCompare(data);
+  }catch(e){hide('cspinner');showError('Network error.','cerrorMsg','cerrorBox');}
+}
+
+function renderCompare(data){
+  function card(d){
+    const riskColor=d.risk_level==='LOW'?'green':d.risk_level==='MEDIUM'?'yellow':'red';
+    return `<div class="compare-card">
+      <h3>${d.ticker} — ${d.company}</h3>
+      <div class="metrics" style="grid-template-columns:1fr 1fr;">
+        <div class="metric"><div class="metric-label">Price</div><div class="metric-value">₹${d.current_price.toLocaleString()}</div></div>
+        <div class="verdict-box ${d.verdict}" style="padding:8px;border-radius:6px;text-align:center;">
+          <div class="verdict-text" style="font-size:1.1rem;">${d.verdict}</div>
+          <div class="conf-text">${d.confidence}%</div>
+        </div>
+        <div class="metric"><div class="metric-label">RSI</div><div class="metric-value">${d.rsi}</div></div>
+        <div class="metric"><div class="metric-label">MACD</div><div class="metric-value ${d.macd_status==='Bullish'?'green':'red'}">${d.macd_status}</div></div>
+        <div class="metric"><div class="metric-label">Risk</div><div class="metric-value ${riskColor}">${d.risk_level}</div></div>
+        <div class="metric"><div class="metric-label">Volatility</div><div class="metric-value">${d.volatility}%</div></div>
+      </div>
+      <img class="chart-img" src="${d.chart_url}?t=${Date.now()}" alt="Chart" style="margin-top:12px;"/>
+    </div>`;
+  }
+  document.getElementById('compareResult').innerHTML=`
+  <div class="panel">
+    <div class="panel-title">⚖️ Comparison Result</div>
+    <div class="compare-grid">${card(data.stock1)}${card(data.stock2)}</div>
+  </div>`;
+  show('compareResult');
+}
+
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+function showError(msg,msgId,boxId){document.getElementById(msgId).textContent='❌ '+msg;show(boxId);}
+</script>
+</body>
+</html>
